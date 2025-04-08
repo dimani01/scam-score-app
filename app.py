@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from math import log1p
 import plotly.express as px
 
 st.set_page_config(page_title="Scam Detection App", layout="wide")
@@ -22,7 +21,7 @@ if uploaded_file:
             val = val.replace(" ", "").replace(",", ".").replace("-", "")
             try:
                 return float(val)
-            except:
+            except ValueError:
                 return np.nan
         return val
 
@@ -32,8 +31,8 @@ if uploaded_file:
 
     # Fix gender if coded as numbers
     if "gender" in df.columns:
-        gender_map = {515: "male", 516: "female"}
-        df["gender"] = df["gender"].replace(gender_map)
+        df["gender"] = df["gender"].replace({515: "male", 516: "female"})
+        df["gender"] = df["gender"].astype(str).str.lower().str.strip()
 
     # Compute Scam Score
     df["Scam_Score"] = (
@@ -101,6 +100,13 @@ if uploaded_file:
     st.markdown(f"- 🧮 Уровень риска: `{risk_filter}`")
     st.markdown(f"- 📋 Решение: `{decision_filter}`")
     st.markdown(f"- 🚻 Пол: `{gender_filter}`")
+
+    # Дополнительно: распределение по полу
+    if "gender" in df_filtered.columns:
+        gender_counts = df_filtered["gender"].value_counts().reset_index()
+        gender_counts.columns = ["Пол", "Количество"]
+        fig_gender = px.pie(gender_counts, names="Пол", values="Количество", title="Распределение по полу")
+        st.plotly_chart(fig_gender, use_container_width=True)
 
     # Визуализация: распределение по решению
     col1, col2 = st.columns(2)
